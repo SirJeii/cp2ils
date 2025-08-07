@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHS Web Development Projects Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Sky -->
+    <!-- Application Structure Plan: A single-page application with a top navigation bar to switch between two main views: 'Timeline' and 'Projects'. The 'Timeline' view will present the project phases chronologically. The 'Projects' view will display a grid of all 13 project groups. Clicking a project card will dynamically display its full details in a modal-like overlay or a dedicated content pane on the right. This structure is chosen for usability because it allows users (students/teachers) to either get a high-level overview of the schedule or dive deep into a specific project's requirements without scrolling through a long, linear document. This separation of concerns (schedule vs. project details) makes information retrieval faster and more intuitive. -->
+    <!-- Visualization & Content Choices: The core information is textual and structural. The timeline will be represented using a styled list (HTML/CSS) to show chronological flow (Goal: Change). Project groups will be a grid of interactive cards (HTML/CSS + JS, Goal: Organize/Inform), which on click reveals detailed text blocks (HTML/CSS + JS, Goal: Inform). The interaction (click to reveal) simplifies the UI, preventing information overload. This is more effective than a static document as it allows users to focus only on the information relevant to them at that moment. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0c4a6e; /* sky-900 */
+        }
+        .project-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .detail-view {
+            display: none;
+        }
+        .detail-view.active {
+            display: block;
+        }
+        .back-button {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">SHS Web Development</h1>
+            <p class="text-lg text-slate-600 mt-2">Project Dashboard & Timeline</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-slate-200 mb-8">
+            <button id="nav-projects" class="nav-link active text-slate-600 font-medium py-3 px-6" onclick="showView('projects')">Projects</button>
+            <button id="nav-timeline" class="nav-link text-slate-600 font-medium py-3 px-6" onclick="showView('timeline')">Timeline</button>
+        </nav>
+
+        <main id="main-content">
+            <div id="view-projects" class="content-section active">
+                <div id="project-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+                <div id="project-detail" class="detail-view mt-8 bg-white p-6 md:p-8 rounded-xl shadow-lg border border-slate-200">
+                    <button id="back-button" class="back-button mb-6 bg-sky-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-600 transition-colors" onclick="showGridView()">← Back to All Projects</button>
+                    <div id="detail-content"></div>
+                </div>
+            </div>
+
+            <div id="view-timeline" class="content-section">
+                <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6 text-center">Project Timeline & Milestones</h2>
+                    <div id="timeline-content" class="space-y-8"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 text-slate-500 text-sm">
+            <p>Senior High School Web Development | Core Technologies: HTML & CSS</p>
+        </footer>
+    </div>
+
+    <script>
+        const projectsData = [
+            {
+                group: "Group 1",
+                title: "Environmental Awareness Hub",
+                goal: "To create an informational website that educates people who are not fully aware of critical environmental problems.",
+                audience: "General public, students, and community members.",
+                pages: [
+                    { name: "Home", desc: "A visually engaging introduction with a strong headline, a brief mission statement, and links to key issues." },
+                    { name: "The Issues", desc: "A main page that links to sub-pages for at least three major environmental problems (e.g., Plastic Pollution, Deforestation, Climate Change)." },
+                    { name: "Issue Detail Pages (x3)", desc: "Each page should explain one issue in detail with facts, statistics, and impactful images." },
+                    { name: "How to Help", desc: "A page offering simple, actionable steps. <strong>This page must use a card-based layout</strong> to present each tip clearly." },
+                    { name: "About Us", desc: "A page describing the purpose of the website and the team behind it." }
+                ],
+                designNotes: "Use a color palette that reflects nature (greens, blues, browns). Ensure text is highly readable against background images."
+            },
+            {
+                group: "Group 2",
+                title: "Green-A-Thon Fundraiser Site",
+                goal: "To build a promotional website that raises awareness for local tree-planting fundraisers.",
+                audience: "Potential donors, corporate sponsors, and volunteers.",
+                pages: [
+                    { name: "Home", desc: "A hero section with a compelling image, details of the current fundraising goal, and a clear 'call to action.' <strong>Must include a CSS-styled progress bar</strong> to visually represent the funds raised." },
+                    { name: "Upcoming Events", desc: "A list of planned tree-planting events with dates, locations, and goals for each. Use a card-based layout." },
+                    { name: "Photo Gallery", desc: "A gallery showcasing photos from past successful events to build trust and show impact." },
+                    { name: "Our Sponsors", desc: "A page acknowledging current sponsors with their logos arranged in a clean grid." },
+                    { name: "Get Involved/Donate", desc: "A page explaining <em>how</em> people can donate (Note: no functional payment form)." }
+                ],
+                designNotes: "Use an optimistic and clean design. Incorporate icons and graphics related to trees, growth, and community."
+            },
+            {
+                group: "Group 3",
+                title: "River & Rainfall Monitoring Hub",
+                goal: "To create a public service website that presents static river/rainfall data and provides an easy-to-access list of emergency hotlines.",
+                audience: "Residents in flood-prone areas.",
+                pages: [
+                    { name: "Home/Dashboard", desc: "An overview page showing the 'current' status of key rivers using a color-coded system (e.g., Green: Normal, Orange: Alert, Red: Critical). This will be a static representation." },
+                    { name: "River Level Data", desc: "A page with a <strong>well-styled HTML table</strong> showing water level data for different monitoring stations." },
+                    { name: "Rainfall Data", desc: "A separate page with a well-styled HTML table showing recent rainfall measurements." },
+                    { name: "Emergency Hotlines", desc: "A critical page with a clear, large-font list of contacts. Make phone numbers clickable using the `tel:` link attribute." },
+                    { name: "Safety Tips", desc: "A page with a <strong>styled list and icons</strong> detailing what to do before, during, and after a flood." }
+                ],
+                designNotes: "Prioritize clarity and readability. Use high-contrast colors. Red and orange should be used meaningfully to indicate warnings."
+            },
+            {
+                group: "Group 4",
+                title: "Personal Expense Education",
+                goal: "An informational site that teaches young adults the basics of managing expenses and budgeting.",
+                audience: "Students and young professionals.",
+                pages: [
+                    { name: "Home", desc: "Introduction to the importance of financial literacy and budgeting." },
+                    { name: "Budgeting 101", desc: "Explain different budgeting methods using clear text and simple graphics." },
+                    { name: "Tracking Your Expenses", desc: "A guide on <em>how</em> to track expenses, with visual examples of a sample expense sheet (using an HTML table)." },
+                    { name: "Budget Calculator Layout", desc: "A page with a <strong>non-functional budget calculator form</strong>. The goal is to practice creating complex form layouts with HTML and styling them beautifully with CSS." },
+                    { name: "Tips for Saving", desc: "A list of practical saving tips for students, presented in a two-column layout." }
+                ],
+                designNotes: "Use a modern, clean, and trustworthy design. Icons can help simplify complex financial topics."
+            },
+            {
+                group: "Group 5",
+                title: "Mental Health Caretaker",
+                goal: "To create a calm, supportive, and informational website for mental health awareness and self-care.",
+                audience: "Individuals seeking mental health information or support.",
+                pages: [
+                    { name: "Home", desc: "A welcoming and gentle landing page with a reassuring message." },
+                    { name: "Understanding Mental Health", desc: "Pages explaining common conditions like anxiety and depression." },
+                    { name: "Self-Care Strategies", desc: "A page with practical, actionable self-care tips. <strong>This page must use a CSS-only accordion layout</strong> where users can click a title to reveal more information." },
+                    { name: "Find Help", desc: "A directory page listing mental health clinics and hotlines." },
+                    { name: "Myths vs. Facts", desc: "A page debunking common myths about mental illness to reduce stigma." }
+                ],
+                designNotes: "Use a soft, calming color palette. Choose a friendly, rounded font. Ensure a peaceful and uncluttered layout."
+            },
+            {
+                group: "Group 6",
+                title: "Public Transportation Guide",
+                goal: "To create a user-friendly guide to navigating public transportation in Metro Manila.",
+                audience: "Commuters, tourists, and students.",
+                pages: [
+                    { name: "Home", desc: "A central hub with large, clickable icons for different transport modes (Train, Bus, Jeepney, UV Express)." },
+                    { name: "Train Guide", desc: "A page with sub-sections for MRT-3, LRT-1, and LRT-2, showing station lists and operating hours." },
+                    { name: "Bus & Carousel Guide", desc: "A page explaining the EDSA Bus Carousel system, with a list of major bus routes." },
+                    { name: "Fare Matrix", desc: "A page dedicated to showing a <strong>well-styled HTML table of fares</strong> for one of the train lines." },
+                    { name: "Commuter Tips", desc: "A page with essential tips for a safe and efficient commute, using an icon-and-text layout." }
+                ],
+                designNotes: "Use a clear, icon-based navigation system. Prioritize mobile-first design as many users will access it on the go."
+            },
+            {
+                group: "Group 7",
+                title: "Local Tourist Spot Guide",
+                goal: "To create a beautiful online guide featuring tourist spots in a specific Philippine province.",
+                audience: "Local and foreign tourists.",
+                pages: [
+                    { name: "Home", desc: "A stunning landing page with a full-screen background image of the province's premier destination." },
+                    { name: "Destinations", desc: "A gallery-style page with cards for each tourist spot." },
+                    { name: "Destination Detail Page", desc: "A <strong>single template page</strong> used to display details for any spot, featuring a photo gallery, description, and 'How to Get There' instructions." },
+                    { name: "Local Delicacies", desc: "A page showcasing the must-try food of the province." },
+                    { name: "Plan Your Trip", desc: "A page with sample itineraries (e.g., '3-Day Weekend Getaway')." }
+                ],
+                designNotes: "This is a highly visual project. Focus on high-quality photography and an effective layout (e.g., a CSS Grid or Flexbox gallery)."
+            },
+            {
+                group: "Group 8",
+                title: "Lazy Shoppe Online",
+                goal: "A mock e-commerce website for a fictional brand selling quirky, fun, or novelty items.",
+                audience: "Young adults, gift shoppers.",
+                pages: [
+                    { name: "Home", desc: "A stylish homepage featuring 'New Arrivals,' 'Best Sellers,' and a <strong>large 'Featured Product' section</strong> with a unique layout." },
+                    { name: "Products/Shop", desc: "The main shop page with a grid of all products. Each product must have a hover effect (e.g., a shadow or a slight zoom)." },
+                    { name: "Product Detail Page", desc: "A template page for a single product, showing a larger image, description, and a styled (non-functional) 'Add to Cart' button." },
+                    { name: "About Us", desc: "A fun page telling the fictional story behind the brand." },
+                    { name: "Contact", desc: "A page with contact information and a styled (non-functional) contact form." }
+                ],
+                designNotes: "The design should match the brand's personality. Focus on creating a clean and attractive product grid."
+            },
+            {
+                group: "Group 9",
+                title: "Business Appointment System",
+                goal: "A professional website for a local service-based business that directs users on how to book an appointment.",
+                audience: "Potential customers.",
+                pages: [
+                    { name: "Home", desc: "A professional landing page introducing the business and its key services. <strong>Must include a 'Testimonials' section</strong> with styled blockquotes." },
+                    { name: "Services", desc: "A detailed list of services offered, organized by category, with descriptions and prices." },
+                    { name: "Our Team/Our Work", desc: "A page to build trust, featuring photos and short bios of the staff or a gallery of their work." },
+                    { name: "FAQ", desc: "A page answering frequently asked questions. This is a good place to practice a two-column layout or a simple list." },
+                    { name: "Book an Appointment", desc: "This page will clearly state the booking procedure (call or email) and include business hours." }
+                ],
+                designNotes: "The design should reflect the industry of the business (e.g., elegant for a salon, clean for a clinic)."
+            },
+            {
+                group: "Group 10",
+                title: "Secondhand Book Exchange",
+                goal: "A community-style website where users can (statically) list secondhand books they want to exchange.",
+                audience: "Book lovers, students.",
+                pages: [
+                    { name: "Home", desc: "An introduction to the book exchange concept and a showcase of 'Recently Listed' books." },
+                    { name: "How It Works", desc: "A clear, step-by-step guide on how to list a book and arrange a swap." },
+                    { name: "Browse Books", desc: "A categorized list of available books in a grid layout. <strong>Must include 'filter' links at the top</strong> (e.g., 'Fiction,' 'Non-Fiction') that use anchor links to jump to the relevant section on the page." },
+                    { name: "Post Your Book", desc: "A page with instructions on what information to email to the site admin to get a book listed." },
+                    { name: "Community Guidelines", desc: "A page outlining the rules for safe and fair swapping." }
+                ],
+                designNotes: "Use a cozy, library-like aesthetic. Serif fonts for headings can add a classic touch."
+            },
+            {
+                group: "Group 11",
+                title: "Online Code Snippet Organizer",
+                goal: "A personal portfolio website for a developer to display their most useful HTML and CSS code snippets.",
+                audience: "Fellow developers, potential employers.",
+                pages: [
+                    { name: "Home", desc: "A brief introduction and a grid linking to different categories of snippets (e.g., CSS Buttons, HTML Forms, Flexbox Layouts)." },
+                    { name: "Snippet Category Pages", desc: "Pages dedicated to each category." },
+                    { name: "Snippet Display", desc: "On the category pages, each snippet must be displayed clearly inside a <strong>custom-styled code block</strong> (`<pre><code>...</code></pre>`). This is the core challenge." },
+                    { name: "Styling Code Blocks", desc: "Use CSS to create a dark/light theme for your code blocks, and add a (visual only) 'copy' button to each block." },
+                    { name: "About Me", desc: "A simple page about the developer." }
+                ],
+                designNotes: "A clean, minimalist, or 'dark mode' theme is required. The focus must be on the readability and presentation of the code itself."
+            },
+            {
+                group: "Group 12",
+                title: "Web-Based Art Gallery and Shop",
+                goal: "To create an elegant online gallery and shop to showcase and sell the work of a visual artist.",
+                audience: "Art collectors, interior designers, fans of the artist.",
+                pages: [
+                    { name: "Home", desc: "A visually striking, minimalist landing page." },
+                    { name: "Gallery", desc: "The main portfolio of the artist's work. <strong>Must use a sophisticated grid layout (like masonry)</strong> to display artwork of different sizes." },
+                    { name: "Artwork Detail Page", desc: "A page with a larger view of the artwork, its title, dimensions, medium, and a descriptive story." },
+                    { name: "About the Artist", desc: "A biography of the artist." },
+                    { name: "Shop/Contact to Buy", desc: "A page listing pieces for sale with prices and clear instructions on how to inquire." }
+                ],
+                designNotes: "The design must be minimalist to ensure the artwork is the main focus. <strong>Pay special attention to typography and the use of white space.</strong>"
+            },
+            {
+                group: "Group 13",
+                title: "Inventory and Sales Info Hub",
+                goal: "An informational website that explains the basic concepts of inventory and sales management for small business owners.",
+                audience: "New entrepreneurs, small retail shop owners.",
+                pages: [
+                    { name: "Home/Dashboard", desc: "A <strong>dashboard-style layout using CSS Grid or Flexbox</strong> with 'cards' linking to the main sections of the site." },
+                    { name: "Inventory Basics", desc: "A page explaining concepts like SKU and stock-taking. <strong>Must include a simple process flow graphic</strong> for inventory management, created using only styled HTML `div`s and CSS." },
+                    { name: "Sales Tracking 101", desc: "A guide on the importance of tracking sales, with examples of daily sales reports (using styled HTML tables)." },
+                    { name: "Beginner's Tools", desc: "A page reviewing simple tools and providing a sample spreadsheet layout using an HTML table." },
+                    { name: "Best Practices", desc: "A summary page with a list of top tips for effective management." }
+                ],
+                designNotes: "Use a professional, clean, and business-like design. Blue and gray color schemes often convey trustworthiness."
+            },
+        ];
+
+        const timelineData = [
+            {
+                phase: "Phase 1: UI/UX Design & Prototyping",
+                weeks: "Weeks 3-8",
+                milestones: [
+                    { week: "Weeks 3-4: Research & Wireframing", desc: "Analyze project requirements, define target audience, and create low-fidelity wireframes in Figma. Focus on layout and structure." },
+                    { week: "Weeks 5-7: High-Fidelity Mockups & Prototyping", desc: "Develop a color palette and typography. Convert wireframes into full-color mockups and create a clickable prototype in Figma." },
+                    { week: "Week 8: Design Presentation", desc: "Present the clickable Figma prototype to the class. Explain design choices and gather feedback before development." }
+                ]
+            },
+            {
+                phase: "Phase 2: Website Development",
+                weeks: "Weeks 10-16",
+                milestones: [
+                    { week: "Weeks 10-11: HTML Structure (The Skeleton)", desc: "Code the semantic HTML for all pages. Add content and ensure all pages are linked correctly." },
+                    { week: "Weeks 12-14: CSS Styling & Layout (The Visuals)", desc: "Write CSS based on the Figma design. Implement layout using Flexbox/Grid and style all elements." },
+                    { week: "Week 15: Responsiveness & Testing", desc: "Write media queries for mobile, tablet, and desktop views. Thoroughly test for bugs and layout issues." },
+                    { week: "Week 16: Final Submission & Demonstration", desc: "Finalize all code and content, submit project files, and demonstrate the live website to the class." }
+                ]
+            }
+        ];
+
+        const projectGrid = document.getElementById('project-grid');
+        const detailContent = document.getElementById('detail-content');
+        const projectDetailView = document.getElementById('project-detail');
+        const backButton = document.getElementById('back-button');
+        const timelineContent = document.getElementById('timeline-content');
+
+        function showProjectDetail(index) {
+            const project = projectsData[index];
+            let pagesHtml = project.pages.map(page => `
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-sky-100 text-sky-800 rounded-full font-bold text-sm mr-4 mt-1">✓</span>
+                    <div>
+                        <h4 class="font-semibold text-slate-800">${page.name}</h4>
+                        <p class="text-slate-600">${page.desc}</p>
+                    </div>
+                </li>
+            `).join('');
+
+            detailContent.innerHTML = `
+                <div class="mb-4">
+                    <span class="inline-block bg-sky-100 text-sky-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded-full">${project.group}</span>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-900">${project.title}</h2>
+                <p class="text-slate-600 mt-2 mb-6">${project.goal}</p>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-slate-800 mb-4 border-b pb-2">Required Pages & Features</h3>
+                        <ul class="space-y-4">${pagesHtml}</ul>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold text-slate-800 mb-4 border-b pb-2">Target Audience</h3>
+                        <p class="text-slate-600 mb-6">${project.audience}</p>
+                        <h3 class="text-xl font-semibold text-slate-800 mb-4 border-b pb-2">Design Notes</h3>
+                        <p class="text-slate-600">${project.designNotes}</p>
+                    </div>
+                </div>
+            `;
+            projectGrid.style.display = 'none';
+            projectDetailView.classList.add('active');
+            backButton.style.display = 'block';
+        }
+
+        function showGridView() {
+            projectGrid.style.display = 'grid';
+            projectDetailView.classList.remove('active');
+            backButton.style.display = 'none';
+        }
+
+        function showView(viewName) {
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            document.getElementById(`nav-${viewName}`).classList.add('active');
+        }
+
+        function renderProjects() {
+            projectGrid.innerHTML = projectsData.map((p, i) => `
+                <div class="project-card bg-white p-6 rounded-xl shadow-md border border-slate-200 cursor-pointer" onclick="showProjectDetail(${i})">
+                    <span class="inline-block bg-sky-100 text-sky-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">${p.group}</span>
+                    <h3 class="text-xl font-bold mt-3 text-slate-900">${p.title}</h3>
+                    <p class="text-slate-600 mt-2 text-sm">${p.goal}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderTimeline() {
+            timelineContent.innerHTML = timelineData.map(phase => `
+                <div class="relative pl-8">
+                    <div class="absolute left-0 top-1 h-full w-0.5 bg-slate-200"></div>
+                    <div class="absolute left-[-6px] top-1 h-4 w-4 rounded-full bg-sky-500 border-4 border-white"></div>
+                    <h3 class="text-xl font-bold text-sky-800">${phase.phase}</h3>
+                    <p class="text-sm font-medium text-slate-500 mb-4">${phase.weeks}</p>
+                    <div class="space-y-4">
+                        ${phase.milestones.map(m => `
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <p class="font-semibold text-slate-800">${m.week}</p>
+                                <p class="text-slate-600 text-sm">${m.desc}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProjects();
+            renderTimeline();
+            showView('projects');
+        });
+    </script>
+</body>
+</html>
